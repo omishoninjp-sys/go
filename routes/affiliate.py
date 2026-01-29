@@ -31,6 +31,75 @@ def normalize_text(text):
     return text
 
 
+def get_all_shopify_products():
+    """取得所有 Shopify 商品（含分頁）"""
+    shop_domain = Config.SHOPIFY_SHOP_DOMAIN
+    access_token = Config.SHOPIFY_ACCESS_TOKEN
+    
+    if not shop_domain or not access_token:
+        return []
+    
+    all_products = []
+    url = f"https://{shop_domain}/admin/api/2024-01/products.json"
+    headers = {
+        'X-Shopify-Access-Token': access_token,
+        'Content-Type': 'application/json'
+    }
+    
+    params = {
+        'limit': 250,
+        'status': 'active'
+    }
+    
+    try:
+        # 第一頁
+        response = requests.get(url, headers=headers, params=params, timeout=15)
+        if response.status_code != 200:
+            return []
+        
+        data = response.json()
+        all_products.extend(data.get('products', []))
+        
+        # 檢查是否有下一頁
+        while 'Link' in response.headers:
+            link_header = response.headers['Link']
+            # 解析 Link header 取得下一頁 URL
+            if 'rel="next"' not in link_header:
+                break
+            
+            # 取得 next link
+            links = link_header.split(',')
+            next_url = None
+            for link in links:
+                if 'rel="next"' in link:
+                    next_url = link.split(';')[0].strip().strip('<>')
+                    break
+            
+            if not next_url:
+                break
+            
+            response = requests.get(next_url, headers=headers, timeout=15)
+            if response.status_code != 200:
+                break
+            
+            data = response.json()
+            products = data.get('products', [])
+            if not products:
+                break
+            
+            all_products.extend(products)
+            
+            # 安全限制，最多取 1000 個商品
+            if len(all_products) >= 1000:
+                break
+        
+        return all_products
+        
+    except Exception as e:
+        print(f"Error fetching products: {e}")
+        return []
+
+
 # ============================================
 # 登入/登出
 # ============================================
@@ -190,34 +259,11 @@ def api_search_products():
     query_normalized = normalize_text(query)
     
     try:
-        # 呼叫 Shopify Admin API
-        shop_domain = Config.SHOPIFY_SHOP_DOMAIN
-        access_token = Config.SHOPIFY_ACCESS_TOKEN
+        # 取得所有商品（含分頁）
+        all_products = get_all_shopify_products()
         
-        if not shop_domain or not access_token:
-            return jsonify({'products': [], 'error': 'Shopify API 未設定'})
-        
-        # 取得所有商品
-        all_products = []
-        url = f"https://{shop_domain}/admin/api/2024-01/products.json"
-        headers = {
-            'X-Shopify-Access-Token': access_token,
-            'Content-Type': 'application/json'
-        }
-        
-        # 分頁取得所有商品
-        params = {
-            'limit': 250,
-            'status': 'active'
-        }
-        
-        response = requests.get(url, headers=headers, params=params, timeout=15)
-        
-        if response.status_code != 200:
-            return jsonify({'products': [], 'error': f'API 錯誤: {response.status_code}'})
-        
-        data = response.json()
-        all_products = data.get('products', [])
+        if not all_products:
+            return jsonify({'products': [], 'error': '無法取得商品列表'})
         
         # 模糊搜尋：正規化後比對
         matched_products = []
@@ -258,8 +304,6 @@ def api_search_products():
             'shop_url': Config.REDIRECT_TARGET
         })
         
-    except requests.exceptions.Timeout:
-        return jsonify({'products': [], 'error': '連線逾時'})
     except Exception as e:
         print(f"Error searching products: {e}")
         return jsonify({'products': [], 'error': '搜尋失敗'})

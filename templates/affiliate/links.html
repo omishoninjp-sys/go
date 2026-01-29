@@ -211,7 +211,7 @@
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">搜尋中...</span>
                 </div>
-                <p class="mt-2 text-muted">搜尋中...</p>
+                <p class="mt-2 text-muted">搜尋中（商品較多可能需要幾秒）...</p>
             </div>
             
             <div id="search-empty" class="text-center py-4 text-muted" style="display: none;">
@@ -245,7 +245,7 @@
         <h5 class="mb-0"><i class="bi bi-box"></i> 手動輸入商品網址</h5>
     </div>
     <div class="card-body">
-        <p class="text-muted mb-3">從官網複製商品網址，產生您的專屬推廣連結</p>
+        <p class="text-muted mb-3">從官網複製商品網址，產生您的專屬推廣連結（會自動轉成追蹤短網址）</p>
         
         <div class="row mb-3">
             <div class="col-md-8">
@@ -279,6 +279,14 @@
                     <i class="bi bi-clipboard"></i> 複製
                 </button>
             </div>
+            <div class="form-text text-success">
+                <i class="bi bi-check-circle me-1"></i> 此連結會自動追蹤點擊和來源
+            </div>
+        </div>
+        
+        <div id="generated-error" class="mt-3 alert alert-warning" style="display: none;">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            <span id="generated-error-text"></span>
         </div>
     </div>
 </div>
@@ -470,28 +478,54 @@ function generateProductLink() {
     const productUrl = document.getElementById('product-url').value.trim();
     const platform = document.getElementById('product-platform').value;
     
+    document.getElementById('generated-link').style.display = 'none';
+    document.getElementById('generated-error').style.display = 'none';
+    
     if (!productUrl) {
         alert('請輸入商品網址');
         return;
     }
     
-    // 解析商品網址
-    let generatedUrl = productUrl;
-    
-    // 檢查是否已經有 query string
-    if (productUrl.includes('?')) {
-        generatedUrl = `${productUrl}&ref=${refCode}`;
-    } else {
-        generatedUrl = `${productUrl}?ref=${refCode}`;
+    // 解析商品網址，取出 path
+    try {
+        const url = new URL(productUrl);
+        const pathname = url.pathname;
+        
+        // 檢查是否是商品頁面
+        if (!pathname.includes('/products/')) {
+            document.getElementById('generated-error-text').textContent = 
+                '網址格式不正確，請輸入商品頁面網址（包含 /products/）';
+            document.getElementById('generated-error').style.display = 'block';
+            return;
+        }
+        
+        // 取出 products/xxx 的部分
+        const productsMatch = pathname.match(/\/?(products\/[^\/\?]+)/);
+        if (!productsMatch) {
+            document.getElementById('generated-error-text').textContent = 
+                '無法解析商品網址，請確認網址正確';
+            document.getElementById('generated-error').style.display = 'block';
+            return;
+        }
+        
+        const productPath = productsMatch[1];
+        
+        // 產生短網址格式（會經過追蹤系統）
+        let generatedUrl = `${shortUrlDomain}/${shortCode}/${productPath}`;
+        
+        // 加上來源追蹤
+        if (platform) {
+            generatedUrl += `?s=${platform}`;
+        }
+        
+        document.getElementById('generated-url').value = generatedUrl;
+        document.getElementById('generated-link').style.display = 'block';
+        
+    } catch (e) {
+        document.getElementById('generated-error-text').textContent = 
+            '網址格式不正確，請輸入完整網址（以 https:// 開頭）';
+        document.getElementById('generated-error').style.display = 'block';
     }
-    
-    // 加上來源追蹤
-    if (platform) {
-        generatedUrl += `&s=${platform}`;
-    }
-    
-    document.getElementById('generated-url').value = generatedUrl;
-    document.getElementById('generated-link').style.display = 'block';
 }
 </script>
 

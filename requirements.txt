@@ -4,8 +4,4 @@ gunicorn==21.2.0
 requests==2.31.0
 shortuuid==1.0.11
 supabase==2.0.0
-postgrest==0.13.0
-gotrue==1.3.0
-httpx==0.25.2
-storage3==0.6.1
-realtime==1.0.2
+httpx==0.24.1

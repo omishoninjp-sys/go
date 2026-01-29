@@ -7,7 +7,6 @@ from models import (
 )
 from config import Config
 import requests
-import re
 
 affiliate_bp = Blueprint('affiliate', __name__, url_prefix='/partner')
 
@@ -22,123 +21,109 @@ def affiliate_required(f):
     return decorated_function
 
 
-def normalize_text(text):
-    """正規化文字，移除特殊符號方便比對"""
-    if not text:
-        return ''
-    text = text.lower()
-    text = re.sub(r'[-_\s\.\[\]【】\(\)（）]', '', text)
-    return text
-
-
-def match_product(product, query_normalized):
-    """檢查商品是否匹配搜尋關鍵字"""
-    searchable_fields = [
-        product.get('title', ''),
-        product.get('vendor', ''),
-        product.get('product_type', ''),
-        product.get('tags', ''),
-    ]
-    
-    combined_text = ' '.join(searchable_fields)
-    combined_normalized = normalize_text(combined_text)
-    
-    return query_normalized in combined_normalized
-
-
-def search_shopify_products(query_normalized, max_results=20):
-    """搜尋 Shopify 商品，找到足夠數量就停止"""
+def search_shopify_graphql(query, max_results=20):
+    """使用 Shopify GraphQL API 搜尋商品"""
     shop_domain = Config.SHOPIFY_SHOP_DOMAIN
     access_token = Config.SHOPIFY_ACCESS_TOKEN
     
     if not shop_domain or not access_token:
         return []
     
-    matched_products = []
-    url = f"https://{shop_domain}/admin/api/2024-01/products.json"
+    url = f"https://{shop_domain}/admin/api/2024-01/graphql.json"
     headers = {
         'X-Shopify-Access-Token': access_token,
         'Content-Type': 'application/json'
     }
     
-    params = {
-        'limit': 250,
-        'status': 'active'
+    # GraphQL 查詢 - 使用 Shopify 內建搜尋
+    graphql_query = """
+    query searchProducts($query: String!) {
+        products(first: 20, query: $query) {
+            edges {
+                node {
+                    id
+                    title
+                    handle
+                    vendor
+                    status
+                    variants(first: 1) {
+                        edges {
+                            node {
+                                price
+                            }
+                        }
+                    }
+                    images(first: 1) {
+                        edges {
+                            node {
+                                url
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
+    """
     
     try:
-        page_count = 0
-        max_pages = 10  # 最多搜尋 10 頁
+        response = requests.post(
+            url,
+            headers=headers,
+            json={
+                'query': graphql_query,
+                'variables': {'query': query}
+            },
+            timeout=10
+        )
         
-        while page_count < max_pages:
-            if page_count == 0:
-                response = requests.get(url, headers=headers, params=params, timeout=10)
-            else:
-                # 從 Link header 取得下一頁
-                if 'Link' not in response.headers:
-                    break
-                    
-                link_header = response.headers['Link']
-                if 'rel="next"' not in link_header:
-                    break
-                
-                next_url = None
-                for link in link_header.split(','):
-                    if 'rel="next"' in link:
-                        next_url = link.split(';')[0].strip().strip('<>')
-                        break
-                
-                if not next_url:
-                    break
-                
-                response = requests.get(next_url, headers=headers, timeout=10)
-            
-            if response.status_code != 200:
-                break
-            
-            data = response.json()
-            products = data.get('products', [])
-            
-            if not products:
-                break
-            
-            # 邊取得邊搜尋
-            for product in products:
-                if match_product(product, query_normalized):
-                    # 取得價格
-                    price = '0'
-                    if product.get('variants'):
-                        price = product['variants'][0].get('price', '0')
-                    
-                    # 取得圖片
-                    image_url = ''
-                    if product.get('images'):
-                        image_url = product['images'][0].get('src', '')
-                    
-                    matched_products.append({
-                        'id': product['id'],
-                        'title': product.get('title', ''),
-                        'handle': product['handle'],
-                        'price': price,
-                        'image': image_url,
-                        'vendor': product.get('vendor', ''),
-                        'url': f"{Config.REDIRECT_TARGET}/products/{product['handle']}"
-                    })
-                    
-                    # 找到足夠數量就停止
-                    if len(matched_products) >= max_results:
-                        return matched_products
-            
-            page_count += 1
+        if response.status_code != 200:
+            print(f"GraphQL error: {response.status_code}")
+            return []
         
-        return matched_products
+        data = response.json()
         
-    except requests.exceptions.Timeout:
-        print("Shopify API timeout")
-        return matched_products  # 回傳已找到的結果
+        if 'errors' in data:
+            print(f"GraphQL errors: {data['errors']}")
+            return []
+        
+        products = []
+        edges = data.get('data', {}).get('products', {}).get('edges', [])
+        
+        for edge in edges:
+            node = edge.get('node', {})
+            
+            # 只顯示 active 商品
+            if node.get('status') != 'ACTIVE':
+                continue
+            
+            # 取得價格
+            price = '0'
+            variants = node.get('variants', {}).get('edges', [])
+            if variants:
+                price = variants[0].get('node', {}).get('price', '0')
+            
+            # 取得圖片
+            image_url = ''
+            images = node.get('images', {}).get('edges', [])
+            if images:
+                image_url = images[0].get('node', {}).get('url', '')
+            
+            products.append({
+                'id': node.get('id', ''),
+                'title': node.get('title', ''),
+                'handle': node.get('handle', ''),
+                'price': price,
+                'image': image_url,
+                'vendor': node.get('vendor', ''),
+                'url': f"{Config.REDIRECT_TARGET}/products/{node.get('handle', '')}"
+            })
+        
+        return products[:max_results]
+        
     except Exception as e:
         print(f"Error searching products: {e}")
-        return matched_products
+        return []
 
 
 # ============================================
@@ -288,21 +273,19 @@ def links():
 @affiliate_bp.route('/api/products/search')
 @affiliate_required
 def api_search_products():
-    """搜尋 Shopify 商品"""
+    """搜尋 Shopify 商品（使用 GraphQL API）"""
     query = request.args.get('q', '').strip()
     
     if not query or len(query) < 2:
         return jsonify({'products': [], 'error': '請輸入至少 2 個字'})
     
-    query_normalized = normalize_text(query)
-    
     try:
-        # 搜尋商品（找到 20 個就停）
-        matched_products = search_shopify_products(query_normalized, max_results=20)
+        # 使用 Shopify GraphQL 搜尋
+        products = search_shopify_graphql(query, max_results=20)
         
         return jsonify({
-            'products': matched_products,
-            'total_found': len(matched_products),
+            'products': products,
+            'total_found': len(products),
             'shop_url': Config.REDIRECT_TARGET
         })
         

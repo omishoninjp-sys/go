@@ -10,6 +10,15 @@
     </a>
 </div>
 
+<!-- 類型篩選 -->
+<div class="mb-3">
+    <div class="btn-group">
+        <a href="{{ url_for('admin.affiliates_list') }}" class="btn btn-outline-secondary {% if not type_filter %}active{% endif %}">全部</a>
+        <a href="{{ url_for('admin.affiliates_list', type='reseller') }}" class="btn btn-outline-primary {% if type_filter == 'reseller' %}active{% endif %}">系統租戶</a>
+        <a href="{{ url_for('admin.affiliates_list', type='affiliate') }}" class="btn btn-outline-success {% if type_filter == 'affiliate' %}active{% endif %}">一般推廣者</a>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-body">
         {% if affiliates %}
@@ -18,6 +27,7 @@
                 <thead>
                     <tr>
                         <th>名稱</th>
+                        <th>類型</th>
                         <th>推薦碼</th>
                         <th>短網址</th>
                         <th>佣金比例</th>
@@ -38,6 +48,13 @@
                             <br><small class="text-muted">{{ affiliate.domain }}</small>
                             {% endif %}
                         </td>
+                        <td>
+                            {% if affiliate.type == 'reseller' %}
+                                <span class="badge bg-primary">系統租戶</span>
+                            {% else %}
+                                <span class="badge bg-success">一般推廣者</span>
+                            {% endif %}
+                        </td>
                         <td><code>{{ affiliate.ref_code }}</code></td>
                         <td>
                             <code>{{ config.SHORT_URL_DOMAIN }}/{{ affiliate.short_code }}</code>
@@ -46,8 +63,8 @@
                             </button>
                         </td>
                         <td>{{ affiliate.commission_rate }}%</td>
-                        <td>{{ affiliate.total_orders }}</td>
-                        <td>¥{{ "{:,.0f}".format(affiliate.pending_commission) }}</td>
+                        <td>{{ affiliate.total_orders or 0 }}</td>
+                        <td>¥{{ "{:,.0f}".format(affiliate.pending_commission or 0) }}</td>
                         <td>
                             {% if affiliate.status == 'active' %}
                                 <span class="badge bg-success badge-status">啟用</span>

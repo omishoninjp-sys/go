@@ -24,25 +24,36 @@
                     <label for="name" class="form-label">名稱 <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="name" name="name" 
                            value="{{ affiliate.name if affiliate else '' }}" required>
-                    <div class="form-text">代購業者的名稱，例如「羊羊代購」</div>
+                    <div class="form-text">代購業者或推廣者的名稱</div>
                 </div>
                 
                 <div class="col-md-6 mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control" id="email" name="email"
-                           value="{{ affiliate.email if affiliate else '' }}">
+                    <label for="type" class="form-label">類型 <span class="text-danger">*</span></label>
+                    <select class="form-select" id="type" name="type" required>
+                        <option value="affiliate" {% if not affiliate or affiliate.type == 'affiliate' %}selected{% endif %}>一般推廣者（網紅、部落客等）</option>
+                        <option value="reseller" {% if affiliate and affiliate.type == 'reseller' %}selected{% endif %}>系統租戶（GoyouLink 代購業者）</option>
+                    </select>
+                    <div class="form-text">系統租戶為使用 GoyouLink ERP 的代購業者</div>
                 </div>
             </div>
             
             <div class="row">
                 <div class="col-md-6 mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" name="email"
+                           value="{{ affiliate.email if affiliate else '' }}">
+                </div>
+                
+                <div class="col-md-6 mb-3">
                     <label for="domain" class="form-label">GoyouLink 網域</label>
                     <input type="text" class="form-control" id="domain" name="domain"
                            value="{{ affiliate.domain if affiliate else '' }}"
                            placeholder="例如：erp.xxx.com">
-                    <div class="form-text">該代購業者使用的 GoyouLink 系統網域</div>
+                    <div class="form-text">僅限系統租戶填寫，一般推廣者可留空</div>
                 </div>
-                
+            </div>
+            
+            <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="commission_rate" class="form-label">佣金比例 (%)</label>
                     <input type="number" class="form-control" id="commission_rate" name="commission_rate"
@@ -50,18 +61,16 @@
                            min="0" max="100" step="0.1">
                     <div class="form-text">預設為 {{ config.DEFAULT_COMMISSION_RATE }}%</div>
                 </div>
-            </div>
-            
-            {% if not affiliate %}
-            <div class="row">
+                
+                {% if not affiliate %}
                 <div class="col-md-6 mb-3">
                     <label for="ref_code" class="form-label">推薦碼（選填）</label>
                     <input type="text" class="form-control" id="ref_code" name="ref_code"
                            placeholder="留空將自動產生">
                     <div class="form-text">用於追蹤訂單來源，例如「alice」、「shop01」</div>
                 </div>
+                {% endif %}
             </div>
-            {% endif %}
             
             {% if affiliate %}
             <div class="row">
@@ -86,4 +95,18 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 根據類型自動顯示/隱藏網域欄位
+document.getElementById('type').addEventListener('change', function() {
+    const domainField = document.getElementById('domain').closest('.col-md-6');
+    if (this.value === 'affiliate') {
+        domainField.style.opacity = '0.5';
+    } else {
+        domainField.style.opacity = '1';
+    }
+});
+</script>
 {% endblock %}

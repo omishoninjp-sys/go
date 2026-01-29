@@ -3,7 +3,7 @@ from functools import wraps
 from models import (
     get_affiliate_by_ref_code, get_affiliate_by_id, update_affiliate,
     get_orders_by_affiliate, get_payouts_by_affiliate, get_clicks_by_affiliate,
-    get_affiliate_summary
+    get_affiliate_summary, get_clicks_by_source
 )
 from config import Config
 import requests
@@ -154,9 +154,13 @@ def links():
     short_url = f"{Config.SHORT_URL_DOMAIN}/{affiliate['short_code']}"
     direct_url = f"{Config.REDIRECT_TARGET}?ref={affiliate['ref_code']}"
     
+    # 取得各來源點擊統計
+    source_stats = get_clicks_by_source(affiliate_id)
+    
     return render_template('affiliate/links.html', 
                            affiliate=affiliate, short_url=short_url, 
-                           direct_url=direct_url, config=Config)
+                           direct_url=direct_url, config=Config,
+                           source_stats=source_stats)
 
 
 # ============================================
@@ -180,14 +184,14 @@ def api_search_products():
         if not shop_domain or not access_token:
             return jsonify({'products': [], 'error': 'Shopify API 未設定'})
         
-        # 取得所有商品（使用 GraphQL 搜尋會更好，但先用 REST API）
+        # 取得所有商品
         url = f"https://{shop_domain}/admin/api/2024-01/products.json"
         headers = {
             'X-Shopify-Access-Token': access_token,
             'Content-Type': 'application/json'
         }
         params = {
-            'limit': 250,  # 取得更多商品
+            'limit': 250,
             'status': 'active'
         }
         
@@ -266,3 +270,12 @@ def api_clicks():
     affiliate_id = session.get('affiliate_id')
     clicks = get_clicks_by_affiliate(affiliate_id, limit=50)
     return jsonify(clicks)
+
+
+@affiliate_bp.route('/api/source-stats')
+@affiliate_required
+def api_source_stats():
+    """取得各來源點擊統計 API"""
+    affiliate_id = session.get('affiliate_id')
+    stats = get_clicks_by_source(affiliate_id)
+    return jsonify(stats)

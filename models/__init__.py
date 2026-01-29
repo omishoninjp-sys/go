@@ -151,7 +151,8 @@ def update_affiliate_stats(affiliate_id: str, clicks: int = 0, orders: int = 0,
 # ============================================
 
 def record_click(affiliate_id: str, ip_address: str = None, 
-                 user_agent: str = None, referer: str = None, landed_url: str = None):
+                 user_agent: str = None, referer: str = None, 
+                 landed_url: str = None, source: str = None):
     """記錄一次點擊"""
     db = get_supabase()
     
@@ -160,7 +161,8 @@ def record_click(affiliate_id: str, ip_address: str = None,
         'ip_address': ip_address,
         'user_agent': user_agent,
         'referer': referer,
-        'landed_url': landed_url
+        'landed_url': landed_url,
+        'source': source  # 新增來源欄位
     }
     
     try:
@@ -186,6 +188,28 @@ def get_clicks_by_affiliate(affiliate_id: str, limit: int = 100):
     except Exception as e:
         print(f"Error in get_clicks_by_affiliate: {e}")
         return []
+
+
+def get_clicks_by_source(affiliate_id: str):
+    """取得代購業者各來源的點擊統計"""
+    db = get_supabase()
+    try:
+        # 取得所有點擊記錄
+        result = db.table('clicks').select('source').eq('affiliate_id', affiliate_id).execute()
+        
+        if not result.data:
+            return {}
+        
+        # 手動計算各來源的數量
+        source_counts = {}
+        for click in result.data:
+            source = click.get('source') or 'direct'
+            source_counts[source] = source_counts.get(source, 0) + 1
+        
+        return source_counts
+    except Exception as e:
+        print(f"Error in get_clicks_by_source: {e}")
+        return {}
 
 
 # ============================================
@@ -408,11 +432,15 @@ def get_affiliate_summary(affiliate_id: str):
         confirmed_orders = db.table('referral_orders').select('id', count='exact')\
             .eq('affiliate_id', affiliate_id).eq('status', 'confirmed').execute()
         
+        # 取得各來源點擊統計
+        source_stats = get_clicks_by_source(affiliate_id)
+        
         return {
             'affiliate': affiliate,
             'pending_orders_count': pending_orders.count if pending_orders else 0,
             'confirmed_orders_count': confirmed_orders.count if confirmed_orders else 0,
-            'short_url': f"{Config.SHORT_URL_DOMAIN}/{affiliate['short_code']}"
+            'short_url': f"{Config.SHORT_URL_DOMAIN}/{affiliate['short_code']}",
+            'source_stats': source_stats
         }
     except Exception as e:
         print(f"Error in get_affiliate_summary: {e}")
@@ -420,7 +448,8 @@ def get_affiliate_summary(affiliate_id: str):
             'affiliate': affiliate,
             'pending_orders_count': 0,
             'confirmed_orders_count': 0,
-            'short_url': f"{Config.SHORT_URL_DOMAIN}/{affiliate.get('short_code', '')}"
+            'short_url': f"{Config.SHORT_URL_DOMAIN}/{affiliate.get('short_code', '')}",
+            'source_stats': {}
         }
 
 

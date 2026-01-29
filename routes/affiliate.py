@@ -1,11 +1,12 @@
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
 from functools import wraps
 from models import (
-    get_affiliate_by_ref_code, get_affiliate_by_id,
-    get_orders_by_affiliate, get_payouts_by_affiliate,
-    get_clicks_by_affiliate, get_affiliate_summary
+    get_affiliate_by_ref_code, get_affiliate_by_id, update_affiliate,
+    get_orders_by_affiliate, get_payouts_by_affiliate, get_clicks_by_affiliate,
+    get_affiliate_summary
 )
 from config import Config
+import requests
 
 affiliate_bp = Blueprint('affiliate', __name__, url_prefix='/partner')
 
@@ -26,18 +27,18 @@ def affiliate_required(f):
 
 @affiliate_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    """代購業者登入頁面（用 ref_code 登入）"""
+    """代購業者登入頁面"""
     if request.method == 'POST':
-        ref_code = request.form.get('ref_code', '').strip().lower()
+        ref_code = request.form.get('ref_code', '').strip()
         
         affiliate = get_affiliate_by_ref_code(ref_code)
         
-        if affiliate and affiliate['status'] == 'active':
+        if affiliate and affiliate.get('status') == 'active':
             session['affiliate_id'] = affiliate['id']
-            session['affiliate_name'] = affiliate['name']
+            session['affiliate_ref_code'] = affiliate['ref_code']
             return redirect(url_for('affiliate.dashboard'))
         else:
-            return render_template('affiliate/login.html', error='推薦碼無效或已停用')
+            return render_template('affiliate/login.html', error='推薦碼無效或帳戶已停用')
     
     return render_template('affiliate/login.html')
 
@@ -46,7 +47,7 @@ def login():
 def logout():
     """登出"""
     session.pop('affiliate_id', None)
-    session.pop('affiliate_name', None)
+    session.pop('affiliate_ref_code', None)
     return redirect(url_for('affiliate.login'))
 
 
@@ -65,13 +66,43 @@ def dashboard():
     if not summary:
         return redirect(url_for('affiliate.logout'))
     
-    # 最近訂單
-    recent_orders = get_orders_by_affiliate(affiliate_id, limit=10)
+    recent_orders = get_orders_by_affiliate(affiliate_id, limit=5)
     
     return render_template('affiliate/dashboard.html', 
-                           summary=summary, 
-                           recent_orders=recent_orders,
-                           config=Config)
+                           summary=summary, recent_orders=recent_orders, config=Config)
+
+
+# ============================================
+# 個人資料
+# ============================================
+
+@affiliate_bp.route('/profile', methods=['GET', 'POST'])
+@affiliate_required
+def profile():
+    """個人資料編輯"""
+    affiliate_id = session.get('affiliate_id')
+    affiliate = get_affiliate_by_id(affiliate_id)
+    
+    if not affiliate:
+        return redirect(url_for('affiliate.logout'))
+    
+    if request.method == 'POST':
+        update_data = {
+            'email': request.form.get('email') or None,
+            'social_facebook': request.form.get('social_facebook') or None,
+            'social_instagram': request.form.get('social_instagram') or None,
+            'social_threads': request.form.get('social_threads') or None,
+            'social_youtube': request.form.get('social_youtube') or None,
+            'social_tiktok': request.form.get('social_tiktok') or None
+        }
+        
+        update_affiliate(affiliate_id, **update_data)
+        
+        # 重新取得更新後的資料
+        affiliate = get_affiliate_by_id(affiliate_id)
+        return render_template('affiliate/profile.html', affiliate=affiliate, success=True)
+    
+    return render_template('affiliate/profile.html', affiliate=affiliate)
 
 
 # ============================================
@@ -88,10 +119,8 @@ def orders():
     orders = get_orders_by_affiliate(affiliate_id, status=status_filter, limit=100)
     affiliate = get_affiliate_by_id(affiliate_id)
     
-    return render_template('affiliate/orders.html', 
-                           orders=orders, 
-                           affiliate=affiliate,
-                           status_filter=status_filter)
+    return render_template('affiliate/orders.html', orders=orders, 
+                           affiliate=affiliate, status_filter=status_filter)
 
 
 # ============================================
@@ -101,16 +130,14 @@ def orders():
 @affiliate_bp.route('/payouts')
 @affiliate_required
 def payouts():
-    """佣金發放記錄"""
+    """發放記錄"""
     affiliate_id = session.get('affiliate_id')
     
     payouts = get_payouts_by_affiliate(affiliate_id, limit=100)
     affiliate = get_affiliate_by_id(affiliate_id)
     
-    return render_template('affiliate/payouts.html', 
-                           payouts=payouts, 
-                           affiliate=affiliate,
-                           config=Config)
+    return render_template('affiliate/payouts.html', payouts=payouts, 
+                           affiliate=affiliate, config=Config)
 
 
 # ============================================
@@ -124,18 +151,84 @@ def links():
     affiliate_id = session.get('affiliate_id')
     affiliate = get_affiliate_by_id(affiliate_id)
     
-    if not affiliate:
-        return redirect(url_for('affiliate.logout'))
-    
-    # 產生各種連結
     short_url = f"{Config.SHORT_URL_DOMAIN}/{affiliate['short_code']}"
     direct_url = f"{Config.REDIRECT_TARGET}?ref={affiliate['ref_code']}"
     
     return render_template('affiliate/links.html', 
-                           affiliate=affiliate,
-                           short_url=short_url,
-                           direct_url=direct_url,
-                           config=Config)
+                           affiliate=affiliate, short_url=short_url, 
+                           direct_url=direct_url, config=Config)
+
+
+# ============================================
+# 商品搜尋 API
+# ============================================
+
+@affiliate_bp.route('/api/products/search')
+@affiliate_required
+def api_search_products():
+    """搜尋 Shopify 商品"""
+    query = request.args.get('q', '').strip()
+    
+    if not query or len(query) < 2:
+        return jsonify({'products': [], 'error': '請輸入至少 2 個字'})
+    
+    try:
+        # 呼叫 Shopify Admin API
+        shop_domain = Config.SHOPIFY_SHOP_DOMAIN
+        access_token = Config.SHOPIFY_ACCESS_TOKEN
+        
+        if not shop_domain or not access_token:
+            return jsonify({'products': [], 'error': 'Shopify API 未設定'})
+        
+        # 搜尋商品
+        url = f"https://{shop_domain}/admin/api/2024-01/products.json"
+        headers = {
+            'X-Shopify-Access-Token': access_token,
+            'Content-Type': 'application/json'
+        }
+        params = {
+            'title': query,
+            'limit': 20,
+            'status': 'active'
+        }
+        
+        response = requests.get(url, headers=headers, params=params, timeout=10)
+        
+        if response.status_code != 200:
+            return jsonify({'products': [], 'error': f'API 錯誤: {response.status_code}'})
+        
+        data = response.json()
+        products = []
+        
+        for product in data.get('products', []):
+            # 取得第一個 variant 的價格
+            price = '0'
+            if product.get('variants'):
+                price = product['variants'][0].get('price', '0')
+            
+            # 取得第一張圖片
+            image_url = ''
+            if product.get('images'):
+                image_url = product['images'][0].get('src', '')
+            elif product.get('image'):
+                image_url = product['image'].get('src', '')
+            
+            products.append({
+                'id': product['id'],
+                'title': product['title'],
+                'handle': product['handle'],
+                'price': price,
+                'image': image_url,
+                'url': f"{Config.REDIRECT_TARGET}/products/{product['handle']}"
+            })
+        
+        return jsonify({'products': products})
+        
+    except requests.exceptions.Timeout:
+        return jsonify({'products': [], 'error': '連線逾時'})
+    except Exception as e:
+        print(f"Error searching products: {e}")
+        return jsonify({'products': [], 'error': '搜尋失敗'})
 
 
 # ============================================
@@ -145,7 +238,7 @@ def links():
 @affiliate_bp.route('/api/stats')
 @affiliate_required
 def api_stats():
-    """取得自己的統計數據"""
+    """取得統計數據 API"""
     affiliate_id = session.get('affiliate_id')
     summary = get_affiliate_summary(affiliate_id)
     return jsonify(summary)
@@ -154,21 +247,16 @@ def api_stats():
 @affiliate_bp.route('/api/orders')
 @affiliate_required
 def api_orders():
-    """取得自己的訂單列表"""
+    """取得訂單列表 API"""
     affiliate_id = session.get('affiliate_id')
-    status = request.args.get('status')
-    limit = int(request.args.get('limit', 50))
-    
-    orders = get_orders_by_affiliate(affiliate_id, status=status, limit=limit)
+    orders = get_orders_by_affiliate(affiliate_id, limit=50)
     return jsonify(orders)
 
 
 @affiliate_bp.route('/api/clicks')
 @affiliate_required
 def api_clicks():
-    """取得自己的點擊記錄"""
+    """取得點擊記錄 API"""
     affiliate_id = session.get('affiliate_id')
-    limit = int(request.args.get('limit', 100))
-    
-    clicks = get_clicks_by_affiliate(affiliate_id, limit=limit)
+    clicks = get_clicks_by_affiliate(affiliate_id, limit=50)
     return jsonify(clicks)

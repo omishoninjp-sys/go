@@ -1,116 +1,150 @@
 {% extends 'affiliate/base.html' %}
 
-{% block title %}推廣連結 - GoyouLink{% endblock %}
+{% block title %}推廣連結 - GoyouLink 分潤系統{% endblock %}
 
 {% block content %}
 <h2 class="mb-4">推廣連結</h2>
 
-<div class="row">
-    <div class="col-lg-8">
-        <!-- 主要推廣連結 -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-link-45deg"></i> 您的專屬推廣連結</h5>
+<!-- 基本推廣連結 -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-link-45deg"></i> 您的推廣連結</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">短網址（推薦使用）</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="short-url" value="{{ short_url }}" readonly>
+                    <button class="btn btn-primary" onclick="copyToClipboard('short-url')">
+                        <i class="bi bi-clipboard"></i> 複製
+                    </button>
+                </div>
+                <div class="form-text">簡短好記，適合社群分享</div>
             </div>
-            <div class="card-body">
-                <p class="text-muted">分享此連結給您的客人，當他們透過此連結購買商品時，您將獲得佣金。</p>
-                
-                <div class="mb-4">
-                    <label class="form-label fw-bold">短網址（推薦使用）</label>
-                    <div class="input-group">
-                        <input type="text" class="form-control form-control-lg" value="{{ short_url }}" readonly id="short-url">
-                        <button class="btn btn-primary" onclick="copyToClipboard('{{ short_url }}', 'short-url')">
-                            <i class="bi bi-clipboard"></i> 複製
-                        </button>
-                    </div>
-                    <div class="form-text">簡短好記，適合分享到社群媒體</div>
+            
+            <div class="col-md-6 mb-3">
+                <label class="form-label">直接連結</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="direct-url" value="{{ direct_url }}" readonly>
+                    <button class="btn btn-outline-secondary" onclick="copyToClipboard('direct-url')">
+                        <i class="bi bi-clipboard"></i> 複製
+                    </button>
                 </div>
-                
-                <div class="mb-4">
-                    <label class="form-label fw-bold">直接連結</label>
-                    <div class="input-group">
-                        <input type="text" class="form-control" value="{{ direct_url }}" readonly id="direct-url">
-                        <button class="btn btn-outline-secondary" onclick="copyToClipboard('{{ direct_url }}', 'direct-url')">
-                            <i class="bi bi-clipboard"></i> 複製
-                        </button>
-                    </div>
-                    <div class="form-text">直接導向商店首頁</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 商品連結產生器 -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-box"></i> 商品連結產生器</h5>
-            </div>
-            <div class="card-body">
-                <p class="text-muted">輸入特定商品頁面網址，產生帶有您推薦碼的連結。</p>
-                
-                <div class="mb-3">
-                    <label class="form-label">商品網址</label>
-                    <input type="text" class="form-control" id="product-url" 
-                           placeholder="例如：{{ config.REDIRECT_TARGET }}/products/yokumoku-cigare">
-                </div>
-                
-                <button class="btn btn-primary" onclick="generateProductLink()">
-                    <i class="bi bi-magic"></i> 產生推廣連結
-                </button>
-                
-                <div id="generated-link" class="mt-3" style="display: none;">
-                    <label class="form-label fw-bold">您的商品推廣連結</label>
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="generated-url" readonly>
-                        <button class="btn btn-primary" onclick="copyToClipboard(document.getElementById('generated-url').value, 'generated-url')">
-                            <i class="bi bi-clipboard"></i> 複製
-                        </button>
-                    </div>
-                </div>
+                <div class="form-text">帶有推薦碼的完整網址</div>
             </div>
         </div>
     </div>
-    
-    <div class="col-lg-4">
-        <!-- 推廣資訊 -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-info-circle"></i> 推廣資訊</h5>
-            </div>
-            <div class="card-body">
-                <table class="table table-sm mb-0">
-                    <tr>
-                        <td class="text-muted">推薦碼</td>
-                        <td><code>{{ affiliate.ref_code }}</code></td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted">短網址代碼</td>
-                        <td><code>{{ affiliate.short_code }}</code></td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted">佣金比例</td>
-                        <td><strong>{{ affiliate.commission_rate }}%</strong></td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted">Cookie 有效期</td>
-                        <td>{{ config.COOKIE_DAYS }} 天</td>
-                    </tr>
-                </table>
+</div>
+
+<!-- 商品搜尋 -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-search"></i> 商品搜尋</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">搜尋商品，一鍵產生您的專屬推廣連結</p>
+        
+        <div class="row mb-3">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="product-search" 
+                           placeholder="輸入商品名稱搜尋..." 
+                           onkeypress="if(event.key==='Enter') searchProducts()">
+                    <button class="btn btn-primary" onclick="searchProducts()">
+                        <i class="bi bi-search"></i> 搜尋
+                    </button>
+                </div>
             </div>
         </div>
         
-        <!-- 使用說明 -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-question-circle"></i> 使用說明</h5>
+        <!-- 搜尋結果 -->
+        <div id="search-results">
+            <div id="search-loading" class="text-center py-4" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">搜尋中...</span>
+                </div>
+                <p class="mt-2 text-muted">搜尋中...</p>
             </div>
-            <div class="card-body">
-                <ol class="mb-0">
-                    <li class="mb-2">複製您的推廣連結</li>
-                    <li class="mb-2">分享給您的客人或發布到社群媒體</li>
-                    <li class="mb-2">客人點擊連結後 {{ config.COOKIE_DAYS }} 天內購買都算您的推薦</li>
-                    <li class="mb-2">訂單出貨後佣金計入待發放</li>
-                    <li>每月結算一次佣金</li>
-                </ol>
+            
+            <div id="search-empty" class="text-center py-4 text-muted" style="display: none;">
+                <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                <p class="mt-2">找不到相關商品</p>
+            </div>
+            
+            <div id="search-error" class="alert alert-danger" style="display: none;"></div>
+            
+            <div id="products-grid" class="row g-3"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 手動輸入商品網址 -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-box"></i> 手動輸入商品網址</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">如果搜尋不到商品，可以直接輸入商品頁面網址</p>
+        
+        <div class="mb-3">
+            <label class="form-label">商品網址</label>
+            <input type="url" class="form-control" id="product-url" 
+                   placeholder="例如：https://goyoutati.com/products/yokumoku-cigare">
+        </div>
+        
+        <button class="btn btn-primary" onclick="generateProductLink()">
+            <i class="bi bi-magic"></i> 產生推廣連結
+        </button>
+        
+        <div id="generated-link" class="mt-3" style="display: none;">
+            <label class="form-label">您的商品推廣連結</label>
+            <div class="input-group">
+                <input type="text" class="form-control" id="generated-url" readonly>
+                <button class="btn btn-success" onclick="copyToClipboard('generated-url')">
+                    <i class="bi bi-clipboard"></i> 複製
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 產生連結的 Modal -->
+<div class="modal fade" id="linkModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">推廣連結</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <img id="modal-product-image" src="" class="img-fluid rounded" style="max-height: 200px;">
+                </div>
+                <h6 id="modal-product-title" class="mb-3"></h6>
+                
+                <div class="mb-3">
+                    <label class="form-label">短網址</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="modal-short-url" readonly>
+                        <button class="btn btn-primary" onclick="copyToClipboard('modal-short-url')">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">完整連結</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="modal-full-url" readonly>
+                        <button class="btn btn-outline-secondary" onclick="copyToClipboard('modal-full-url')">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
             </div>
         </div>
     </div>
@@ -119,20 +153,107 @@
 
 {% block extra_js %}
 <script>
-function copyToClipboard(text, inputId) {
-    navigator.clipboard.writeText(text).then(function() {
-        const btn = document.querySelector(`#${inputId}`).nextElementSibling;
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="bi bi-check"></i> 已複製';
-        btn.classList.remove('btn-primary', 'btn-outline-secondary');
-        btn.classList.add('btn-success');
-        
-        setTimeout(function() {
-            btn.innerHTML = originalText;
-            btn.classList.remove('btn-success');
+const refCode = '{{ affiliate.ref_code }}';
+const shortCode = '{{ affiliate.short_code }}';
+const shortUrlDomain = '{{ config.SHORT_URL_DOMAIN }}';
+const redirectTarget = '{{ config.REDIRECT_TARGET }}';
+
+function copyToClipboard(elementId) {
+    const input = document.getElementById(elementId);
+    input.select();
+    document.execCommand('copy');
+    
+    // 顯示提示
+    const btn = input.nextElementSibling;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check"></i> 已複製';
+    btn.classList.add('btn-success');
+    btn.classList.remove('btn-primary', 'btn-outline-secondary');
+    
+    setTimeout(() => {
+        btn.innerHTML = originalHtml;
+        btn.classList.remove('btn-success');
+        if (originalHtml.includes('複製')) {
             btn.classList.add('btn-primary');
-        }, 2000);
-    });
+        } else {
+            btn.classList.add('btn-outline-secondary');
+        }
+    }, 2000);
+}
+
+async function searchProducts() {
+    const query = document.getElementById('product-search').value.trim();
+    
+    if (query.length < 2) {
+        alert('請輸入至少 2 個字');
+        return;
+    }
+    
+    // 顯示載入中
+    document.getElementById('search-loading').style.display = 'block';
+    document.getElementById('search-empty').style.display = 'none';
+    document.getElementById('search-error').style.display = 'none';
+    document.getElementById('products-grid').innerHTML = '';
+    
+    try {
+        const response = await fetch(`/partner/api/products/search?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        document.getElementById('search-loading').style.display = 'none';
+        
+        if (data.error) {
+            document.getElementById('search-error').textContent = data.error;
+            document.getElementById('search-error').style.display = 'block';
+            return;
+        }
+        
+        if (data.products.length === 0) {
+            document.getElementById('search-empty').style.display = 'block';
+            return;
+        }
+        
+        // 顯示商品
+        const grid = document.getElementById('products-grid');
+        data.products.forEach(product => {
+            const col = document.createElement('div');
+            col.className = 'col-md-4 col-sm-6';
+            col.innerHTML = `
+                <div class="card h-100 product-card">
+                    <img src="${product.image || 'https://via.placeholder.com/300x300?text=No+Image'}" 
+                         class="card-img-top" alt="${product.title}"
+                         style="height: 200px; object-fit: cover;">
+                    <div class="card-body">
+                        <h6 class="card-title text-truncate" title="${product.title}">${product.title}</h6>
+                        <p class="card-text text-primary fw-bold">¥${Number(product.price).toLocaleString()}</p>
+                        <button class="btn btn-primary btn-sm w-100" 
+                                onclick="showProductLink('${product.handle}', '${product.title.replace(/'/g, "\\'")}', '${product.image}')">
+                            <i class="bi bi-link-45deg"></i> 產生推廣連結
+                        </button>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(col);
+        });
+        
+    } catch (error) {
+        document.getElementById('search-loading').style.display = 'none';
+        document.getElementById('search-error').textContent = '搜尋時發生錯誤';
+        document.getElementById('search-error').style.display = 'block';
+        console.error('Search error:', error);
+    }
+}
+
+function showProductLink(handle, title, image) {
+    const shortUrl = `${shortUrlDomain}/${shortCode}/products/${handle}`;
+    const fullUrl = `${redirectTarget}/products/${handle}?ref=${refCode}`;
+    
+    document.getElementById('modal-product-title').textContent = title;
+    document.getElementById('modal-product-image').src = image || 'https://via.placeholder.com/300x300?text=No+Image';
+    document.getElementById('modal-short-url').value = shortUrl;
+    document.getElementById('modal-full-url').value = fullUrl;
+    
+    const modal = new bootstrap.Modal(document.getElementById('linkModal'));
+    modal.show();
 }
 
 function generateProductLink() {
@@ -143,21 +264,28 @@ function generateProductLink() {
         return;
     }
     
-    // 解析網址並加上推薦碼
-    let generatedUrl;
-    try {
-        const url = new URL(productUrl);
-        url.searchParams.set('ref', '{{ affiliate.ref_code }}');
-        generatedUrl = url.toString();
-    } catch (e) {
-        // 如果不是完整網址，假設是相對路徑
-        const baseUrl = '{{ config.REDIRECT_TARGET }}';
-        const path = productUrl.startsWith('/') ? productUrl : '/' + productUrl;
-        generatedUrl = `${baseUrl}${path}?ref={{ affiliate.ref_code }}`;
+    // 解析商品網址
+    let generatedUrl = productUrl;
+    
+    // 檢查是否已經有 query string
+    if (productUrl.includes('?')) {
+        generatedUrl = `${productUrl}&ref=${refCode}`;
+    } else {
+        generatedUrl = `${productUrl}?ref=${refCode}`;
     }
     
     document.getElementById('generated-url').value = generatedUrl;
     document.getElementById('generated-link').style.display = 'block';
 }
 </script>
+
+<style>
+.product-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+</style>
 {% endblock %}

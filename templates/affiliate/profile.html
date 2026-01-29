@@ -1,0 +1,164 @@
+{% extends 'affiliate/base.html' %}
+
+{% block title %}個人資料 - GoyouLink 分潤系統{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">個人資料</h2>
+</div>
+
+{% if success %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="bi bi-check-circle me-2"></i> 個人資料已更新！
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <!-- 基本資訊（唯讀） -->
+                    <h5 class="mb-3"><i class="bi bi-person"></i> 基本資訊</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">名稱</label>
+                            <input type="text" class="form-control" value="{{ affiliate.name }}" disabled>
+                            <div class="form-text">如需修改請聯繫管理員</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">推薦碼</label>
+                            <input type="text" class="form-control" value="{{ affiliate.ref_code }}" disabled>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                   value="{{ affiliate.email or '' }}"
+                                   placeholder="your@email.com">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">佣金比例</label>
+                            <input type="text" class="form-control" value="{{ affiliate.commission_rate }}%" disabled>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <!-- 社群媒體（可編輯） -->
+                    <h5 class="mb-3"><i class="bi bi-share"></i> 社群媒體</h5>
+                    <p class="text-muted mb-3">填入您的社群媒體連結，方便管理員聯繫您</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="social_facebook" class="form-label">
+                                <i class="bi bi-facebook text-primary"></i> Facebook
+                            </label>
+                            <input type="url" class="form-control" id="social_facebook" name="social_facebook"
+                                   value="{{ affiliate.social_facebook or '' }}"
+                                   placeholder="https://www.facebook.com/yourpage">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="social_instagram" class="form-label">
+                                <i class="bi bi-instagram text-danger"></i> Instagram
+                            </label>
+                            <input type="url" class="form-control" id="social_instagram" name="social_instagram"
+                                   value="{{ affiliate.social_instagram or '' }}"
+                                   placeholder="https://www.instagram.com/youraccount">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="social_threads" class="form-label">
+                                <i class="bi bi-threads text-dark"></i> Threads
+                            </label>
+                            <input type="url" class="form-control" id="social_threads" name="social_threads"
+                                   value="{{ affiliate.social_threads or '' }}"
+                                   placeholder="https://www.threads.net/@youraccount">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="social_youtube" class="form-label">
+                                <i class="bi bi-youtube text-danger"></i> YouTube
+                            </label>
+                            <input type="url" class="form-control" id="social_youtube" name="social_youtube"
+                                   value="{{ affiliate.social_youtube or '' }}"
+                                   placeholder="https://www.youtube.com/@yourchannel">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="social_tiktok" class="form-label">
+                                <i class="bi bi-tiktok text-dark"></i> TikTok
+                            </label>
+                            <input type="url" class="form-control" id="social_tiktok" name="social_tiktok"
+                                   value="{{ affiliate.social_tiktok or '' }}"
+                                   placeholder="https://www.tiktok.com/@youraccount">
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg"></i> 儲存變更
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- 目前設定的社群連結 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-link-45deg"></i> 已設定的社群連結</h5>
+            </div>
+            <div class="card-body">
+                {% if affiliate.social_facebook or affiliate.social_instagram or affiliate.social_threads or affiliate.social_youtube or affiliate.social_tiktok %}
+                <div class="d-flex flex-column gap-2">
+                    {% if affiliate.social_facebook %}
+                    <a href="{{ affiliate.social_facebook }}" target="_blank" class="btn btn-outline-primary btn-sm text-start">
+                        <i class="bi bi-facebook me-2"></i> Facebook
+                    </a>
+                    {% endif %}
+                    
+                    {% if affiliate.social_instagram %}
+                    <a href="{{ affiliate.social_instagram }}" target="_blank" class="btn btn-outline-danger btn-sm text-start">
+                        <i class="bi bi-instagram me-2"></i> Instagram
+                    </a>
+                    {% endif %}
+                    
+                    {% if affiliate.social_threads %}
+                    <a href="{{ affiliate.social_threads }}" target="_blank" class="btn btn-outline-dark btn-sm text-start">
+                        <i class="bi bi-threads me-2"></i> Threads
+                    </a>
+                    {% endif %}
+                    
+                    {% if affiliate.social_youtube %}
+                    <a href="{{ affiliate.social_youtube }}" target="_blank" class="btn btn-outline-danger btn-sm text-start">
+                        <i class="bi bi-youtube me-2"></i> YouTube
+                    </a>
+                    {% endif %}
+                    
+                    {% if affiliate.social_tiktok %}
+                    <a href="{{ affiliate.social_tiktok }}" target="_blank" class="btn btn-outline-dark btn-sm text-start">
+                        <i class="bi bi-tiktok me-2"></i> TikTok
+                    </a>
+                    {% endif %}
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">尚未設定社群連結</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -24,11 +24,35 @@ def affiliate_required(f):
 
 def normalize_text(text):
     """正規化文字，移除特殊符號方便比對"""
+    if not text:
+        return ''
     # 轉小寫
     text = text.lower()
-    # 移除常見分隔符號（-、_、空格、.）
-    text = re.sub(r'[-_\s\.]', '', text)
+    # 移除常見分隔符號（-、_、空格、.、【】、()）
+    text = re.sub(r'[-_\s\.\[\]【】\(\)（）]', '', text)
     return text
+
+
+def match_product(product, query_normalized):
+    """檢查商品是否匹配搜尋關鍵字"""
+    # 搜尋範圍：標題、品牌、標籤
+    searchable_fields = [
+        product.get('title', ''),
+        product.get('vendor', ''),
+        product.get('product_type', ''),
+    ]
+    
+    # 加入 tags
+    tags = product.get('tags', '')
+    if tags:
+        searchable_fields.append(tags)
+    
+    # 合併所有可搜尋文字
+    combined_text = ' '.join(searchable_fields)
+    combined_normalized = normalize_text(combined_text)
+    
+    # 檢查是否包含關鍵字
+    return query_normalized in combined_normalized
 
 
 def get_all_shopify_products():
@@ -55,15 +79,16 @@ def get_all_shopify_products():
         # 第一頁
         response = requests.get(url, headers=headers, params=params, timeout=15)
         if response.status_code != 200:
+            print(f"Shopify API error: {response.status_code}")
             return []
         
         data = response.json()
         all_products.extend(data.get('products', []))
         
         # 檢查是否有下一頁
-        while 'Link' in response.headers:
+        page_count = 1
+        while 'Link' in response.headers and page_count < 5:
             link_header = response.headers['Link']
-            # 解析 Link header 取得下一頁 URL
             if 'rel="next"' not in link_header:
                 break
             
@@ -88,11 +113,9 @@ def get_all_shopify_products():
                 break
             
             all_products.extend(products)
-            
-            # 安全限制，最多取 1000 個商品
-            if len(all_products) >= 1000:
-                break
+            page_count += 1
         
+        print(f"Loaded {len(all_products)} products from Shopify")
         return all_products
         
     except Exception as e:
@@ -258,6 +281,8 @@ def api_search_products():
     # 正規化搜尋關鍵字
     query_normalized = normalize_text(query)
     
+    print(f"Searching for: {query} (normalized: {query_normalized})")
+    
     try:
         # 取得所有商品（含分頁）
         all_products = get_all_shopify_products()
@@ -265,15 +290,12 @@ def api_search_products():
         if not all_products:
             return jsonify({'products': [], 'error': '無法取得商品列表'})
         
-        # 模糊搜尋：正規化後比對
+        # 模糊搜尋
         matched_products = []
         
         for product in all_products:
-            title = product.get('title', '')
-            title_normalized = normalize_text(title)
-            
-            # 檢查正規化後的標題是否包含正規化後的關鍵字
-            if query_normalized in title_normalized:
+            # 使用改進的匹配函數
+            if match_product(product, query_normalized):
                 # 取得第一個 variant 的價格
                 price = '0'
                 if product.get('variants'):
@@ -288,12 +310,15 @@ def api_search_products():
                 
                 matched_products.append({
                     'id': product['id'],
-                    'title': title,
+                    'title': product.get('title', ''),
                     'handle': product['handle'],
                     'price': price,
                     'image': image_url,
+                    'vendor': product.get('vendor', ''),
                     'url': f"{Config.REDIRECT_TARGET}/products/{product['handle']}"
                 })
+        
+        print(f"Found {len(matched_products)} matching products")
         
         # 限制回傳 20 個
         matched_products = matched_products[:20]

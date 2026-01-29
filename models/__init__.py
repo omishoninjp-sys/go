@@ -24,7 +24,8 @@ def get_supabase():
 # ============================================
 
 def create_affiliate(name: str, email: str = None, domain: str = None, 
-                     ref_code: str = None, commission_rate: float = None):
+                     ref_code: str = None, commission_rate: float = None,
+                     affiliate_type: str = 'affiliate'):
     """建立新的代購業者"""
     db = get_supabase()
     
@@ -46,41 +47,60 @@ def create_affiliate(name: str, email: str = None, domain: str = None,
         'ref_code': ref_code,
         'short_code': short_code,
         'commission_rate': commission_rate,
-        'status': 'active'
+        'status': 'active',
+        'type': affiliate_type  # 新增類型欄位
     }
     
-    result = db.table('affiliates').insert(data).execute()
-    return result.data[0] if result.data else None
+    try:
+        result = db.table('affiliates').insert(data).execute()
+        return result.data[0] if result.data else None
+    except Exception as e:
+        print(f"Error in create_affiliate: {e}")
+        return None
 
 
 def get_affiliate_by_id(affiliate_id: str):
     """用 ID 取得代購業者"""
     db = get_supabase()
-    result = db.table('affiliates').select('*').eq('id', affiliate_id).execute()
-    return result.data[0] if result.data else None
+    try:
+        result = db.table('affiliates').select('*').eq('id', affiliate_id).execute()
+        return result.data[0] if result.data else None
+    except Exception as e:
+        print(f"Error in get_affiliate_by_id: {e}")
+        return None
 
 
 def get_affiliate_by_ref_code(ref_code: str):
     """用推薦碼取得代購業者"""
     db = get_supabase()
-    result = db.table('affiliates').select('*').eq('ref_code', ref_code).execute()
-    return result.data[0] if result.data else None
+    try:
+        result = db.table('affiliates').select('*').eq('ref_code', ref_code).execute()
+        return result.data[0] if result.data else None
+    except Exception as e:
+        print(f"Error in get_affiliate_by_ref_code: {e}")
+        return None
 
 
 def get_affiliate_by_short_code(short_code: str):
     """用短網址代碼取得代購業者"""
     db = get_supabase()
-    result = db.table('affiliates').select('*').eq('short_code', short_code).execute()
-    return result.data[0] if result.data else None
+    try:
+        result = db.table('affiliates').select('*').eq('short_code', short_code).execute()
+        return result.data[0] if result.data else None
+    except Exception as e:
+        print(f"Error in get_affiliate_by_short_code: {e}")
+        return None
 
 
-def get_all_affiliates(status: str = None):
+def get_all_affiliates(status: str = None, affiliate_type: str = None):
     """取得所有代購業者"""
     db = get_supabase()
     try:
         query = db.table('affiliates').select('*')
         if status:
             query = query.eq('status', status)
+        if affiliate_type:
+            query = query.eq('type', affiliate_type)
         result = query.order('created_at', desc=True).execute()
         return result.data if result.data else []
     except Exception as e:
@@ -91,8 +111,12 @@ def get_all_affiliates(status: str = None):
 def update_affiliate(affiliate_id: str, **kwargs):
     """更新代購業者資料"""
     db = get_supabase()
-    result = db.table('affiliates').update(kwargs).eq('id', affiliate_id).execute()
-    return result.data[0] if result.data else None
+    try:
+        result = db.table('affiliates').update(kwargs).eq('id', affiliate_id).execute()
+        return result.data[0] if result.data else None
+    except Exception as e:
+        print(f"Error in update_affiliate: {e}")
+        return None
 
 
 def update_affiliate_stats(affiliate_id: str, clicks: int = 0, orders: int = 0, 
@@ -203,8 +227,12 @@ def create_referral_order(affiliate_id: str, shopify_order_id: str, order_number
 def get_order_by_shopify_id(shopify_order_id: str):
     """用 Shopify 訂單 ID 取得推薦訂單"""
     db = get_supabase()
-    result = db.table('referral_orders').select('*').eq('shopify_order_id', shopify_order_id).execute()
-    return result.data[0] if result.data else None
+    try:
+        result = db.table('referral_orders').select('*').eq('shopify_order_id', shopify_order_id).execute()
+        return result.data[0] if result.data else None
+    except Exception as e:
+        print(f"Error in get_order_by_shopify_id: {e}")
+        return None
 
 
 def get_orders_by_affiliate(affiliate_id: str, status: str = None, limit: int = 100):

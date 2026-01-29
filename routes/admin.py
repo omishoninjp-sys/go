@@ -70,8 +70,9 @@ def dashboard():
 @admin_required
 def affiliates_list():
     """代購業者列表"""
-    affiliates = get_all_affiliates()
-    return render_template('admin/affiliates.html', affiliates=affiliates, config=Config)
+    type_filter = request.args.get('type')
+    affiliates = get_all_affiliates(affiliate_type=type_filter)
+    return render_template('admin/affiliates.html', affiliates=affiliates, config=Config, type_filter=type_filter)
 
 
 @admin_bp.route('/affiliates/create', methods=['GET', 'POST'])
@@ -84,6 +85,7 @@ def affiliates_create():
         domain = request.form.get('domain')
         ref_code = request.form.get('ref_code') or None
         commission_rate = request.form.get('commission_rate')
+        affiliate_type = request.form.get('type', 'affiliate')
         
         if commission_rate:
             commission_rate = float(commission_rate)
@@ -95,7 +97,8 @@ def affiliates_create():
             email=email,
             domain=domain,
             ref_code=ref_code,
-            commission_rate=commission_rate
+            commission_rate=commission_rate,
+            affiliate_type=affiliate_type
         )
         
         if affiliate:
@@ -136,7 +139,8 @@ def affiliates_edit(affiliate_id):
             'email': request.form.get('email'),
             'domain': request.form.get('domain'),
             'commission_rate': float(request.form.get('commission_rate', 5)),
-            'status': request.form.get('status', 'active')
+            'status': request.form.get('status', 'active'),
+            'type': request.form.get('type', 'affiliate')
         }
         
         update_affiliate(affiliate_id, **update_data)

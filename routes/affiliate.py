@@ -167,7 +167,7 @@ def links():
 @affiliate_required
 def api_search_products():
     """搜尋 Shopify 商品"""
-    query = request.args.get('q', '').strip()
+    query = request.args.get('q', '').strip().lower()
     
     if not query or len(query) < 2:
         return jsonify({'products': [], 'error': '請輸入至少 2 個字'})
@@ -180,19 +180,18 @@ def api_search_products():
         if not shop_domain or not access_token:
             return jsonify({'products': [], 'error': 'Shopify API 未設定'})
         
-        # 搜尋商品
+        # 取得所有商品（使用 GraphQL 搜尋會更好，但先用 REST API）
         url = f"https://{shop_domain}/admin/api/2024-01/products.json"
         headers = {
             'X-Shopify-Access-Token': access_token,
             'Content-Type': 'application/json'
         }
         params = {
-            'title': query,
-            'limit': 20,
+            'limit': 250,  # 取得更多商品
             'status': 'active'
         }
         
-        response = requests.get(url, headers=headers, params=params, timeout=10)
+        response = requests.get(url, headers=headers, params=params, timeout=15)
         
         if response.status_code != 200:
             return jsonify({'products': [], 'error': f'API 錯誤: {response.status_code}'})
@@ -201,26 +200,33 @@ def api_search_products():
         products = []
         
         for product in data.get('products', []):
-            # 取得第一個 variant 的價格
-            price = '0'
-            if product.get('variants'):
-                price = product['variants'][0].get('price', '0')
+            # 模糊搜尋：檢查標題是否包含搜尋關鍵字
+            title_lower = product.get('title', '').lower()
             
-            # 取得第一張圖片
-            image_url = ''
-            if product.get('images'):
-                image_url = product['images'][0].get('src', '')
-            elif product.get('image'):
-                image_url = product['image'].get('src', '')
-            
-            products.append({
-                'id': product['id'],
-                'title': product['title'],
-                'handle': product['handle'],
-                'price': price,
-                'image': image_url,
-                'url': f"{Config.REDIRECT_TARGET}/products/{product['handle']}"
-            })
+            if query in title_lower:
+                # 取得第一個 variant 的價格
+                price = '0'
+                if product.get('variants'):
+                    price = product['variants'][0].get('price', '0')
+                
+                # 取得第一張圖片
+                image_url = ''
+                if product.get('images'):
+                    image_url = product['images'][0].get('src', '')
+                elif product.get('image'):
+                    image_url = product['image'].get('src', '')
+                
+                products.append({
+                    'id': product['id'],
+                    'title': product['title'],
+                    'handle': product['handle'],
+                    'price': price,
+                    'image': image_url,
+                    'url': f"{Config.REDIRECT_TARGET}/products/{product['handle']}"
+                })
+        
+        # 限制回傳數量
+        products = products[:20]
         
         return jsonify({'products': products})
         

@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoyouLink 分潤計劃 | 與我們一起賺取佣金</title>
+    <meta name="description" content="加入 GoyouLink 分潤計劃，推廣日本精選商品，賺取 5% 佣金。簡單分享，輕鬆獲利。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #E63946;
+            --primary-dark: #C1121F;
+            --secondary: #1D3557;
+            --accent: #F4A261;
+            --light: #F1FAEE;
+            --dark: #14213D;
+            --gradient-warm: linear-gradient(135deg, #E63946 0%, #F4A261 100%);
+            --gradient-cool: linear-gradient(135deg, #1D3557 0%, #457B9D 100%);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans TC', 'Zen Kaku Gothic New', sans-serif;
+            background: var(--light);
+            color: var(--dark);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+        
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            background: var(--gradient-cool);
+            position: relative;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            pointer-events: none;
+        }
+        
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero-text h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 900;
+            color: white;
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+        }
+        
+        .hero-text h1 span {
+            background: var(--gradient-warm);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero-text p {
+            font-size: 1.25rem;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 2rem;
+        }
+        
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: var(--gradient-warm);
+            color: white;
+            box-shadow: 0 10px 30px rgba(230, 57, 70, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(230, 57, 70, 0.5);
+        }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.25);
+            border-color: white;
+        }
+        
+        .hero-visual {
+            position: relative;
+        }
+        
+        .hero-card {
+            background: white;
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+            transform: rotate(3deg);
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: rotate(3deg) translateY(0); }
+            50% { transform: rotate(3deg) translateY(-20px); }
+        }
+        
+        .hero-card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .hero-card-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--gradient-warm);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+        
+        .hero-card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        
+        .hero-card-subtitle {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 900;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        /* Features Section */
+        .features {
+            padding: 6rem 2rem;
+            background: white;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        
+        .section-title h2 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 900;
+            margin-bottom: 1rem;
+        }
+        
+        .section-title p {
+            color: #666;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .features-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+        
+        .feature-card {
+            background: var(--light);
+            border-radius: 20px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .feature-icon {
+            width: 70px;
+            height: 70px;
+            background: var(--gradient-warm);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+            margin-bottom: 1.5rem;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+        
+        .feature-card p {
+            color: #666;
+            font-size: 0.95rem;
+        }
+        
+        /* How It Works */
+        .how-it-works {
+            padding: 6rem 2rem;
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .how-it-works .section-title h2 {
+            color: white;
+        }
+        
+        .how-it-works .section-title p {
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .steps {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .step:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateX(10px);
+        }
+        
+        .step-number {
+            width: 60px;
+            height: 60px;
+            background: var(--gradient-warm);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 900;
+            flex-shrink: 0;
+        }
+        
+        .step-content h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .step-content p {
+            color: rgba(255,255,255,0.8);
+        }
+        
+        /* Commission Section */
+        .commission {
+            padding: 6rem 2rem;
+            background: white;
+        }
+        
+        .commission-box {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--gradient-warm);
+            border-radius: 30px;
+            padding: 3rem;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .commission-box::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        
+        .commission-rate {
+            font-size: clamp(4rem, 10vw, 8rem);
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 1rem;
+        }
+        
+        .commission-rate span {
+            font-size: 0.4em;
+            vertical-align: middle;
+        }
+        
+        .commission-box h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .commission-details {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+        
+        .commission-detail {
+            text-align: center;
+        }
+        
+        .commission-detail i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        
+        /* CTA Section */
+        .cta {
+            padding: 6rem 2rem;
+            background: var(--light);
+            text-align: center;
+        }
+        
+        .cta h2 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 900;
+            margin-bottom: 1rem;
+        }
+        
+        .cta p {
+            color: #666;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+        
+        .contact-methods {
+            max-width: 800px;
+            margin: 3rem auto 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .contact-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-decoration: none;
+            color: var(--dark);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .contact-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+        
+        .contact-card i {
+            font-size: 2rem;
+            color: var(--primary);
+        }
+        
+        .contact-card span {
+            font-weight: 700;
+        }
+        
+        /* Footer */
+        footer {
+            background: var(--dark);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        
+        .footer-logo {
+            font-size: 1.5rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .footer-links a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-links a:hover {
+            color: white;
+        }
+        
+        .copyright {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            
+            .hero-buttons {
+                justify-content: center;
+            }
+            
+            .hero-visual {
+                order: -1;
+            }
+            
+            .hero-card {
+                transform: rotate(0);
+            }
+            
+            @keyframes float {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-10px); }
+            }
+            
+            .step {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .step:hover {
+                transform: translateY(-5px);
+            }
+            
+            .commission-details {
+                gap: 1.5rem;
+            }
+        }
+        
+        /* Scroll Animation */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+        
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>推廣日本好物<br><span>賺取分潤佣金</span></h1>
+                <p>加入 GoyouLink 分潤計劃，只要分享連結，每筆成交訂單都能獲得佣金。無需囤貨、無需成本，輕鬆開始您的被動收入。</p>
+                <div class="hero-buttons">
+                    <a href="#contact" class="btn btn-primary">
+                        <i class="bi bi-rocket-takeoff"></i> 立即申請加入
+                    </a>
+                    <a href="#how-it-works" class="btn btn-secondary">
+                        <i class="bi bi-play-circle"></i> 了解更多
+                    </a>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="hero-card">
+                    <div class="hero-card-header">
+                        <div class="hero-card-icon">
+                            <i class="bi bi-graph-up-arrow"></i>
+                        </div>
+                        <div>
+                            <div class="hero-card-title">本月佣金預覽</div>
+                            <div class="hero-card-subtitle">分潤夥伴儀表板</div>
+                        </div>
+                    </div>
+                    <div class="hero-stats">
+                        <div>
+                            <div class="stat-value">1,234</div>
+                            <div class="stat-label">總點擊數</div>
+                        </div>
+                        <div>
+                            <div class="stat-value">56</div>
+                            <div class="stat-label">成交訂單</div>
+                        </div>
+                        <div>
+                            <div class="stat-value">¥28,500</div>
+                            <div class="stat-label">預估佣金</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Features Section -->
+    <section class="features">
+        <div class="section-title fade-in">
+            <h2>為什麼選擇 GoyouLink？</h2>
+            <p>我們提供最簡單、最透明的分潤機制，讓您專注在推廣上</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <i class="bi bi-percent"></i>
+                </div>
+                <h3>高額佣金</h3>
+                <p>每筆成交訂單享有 5% 佣金，業界領先的分潤比例，讓您的努力獲得應有的回報。</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+                <h3>30 天追蹤期</h3>
+                <p>Cookie 有效期長達 30 天，顧客只要在這期間內下單，佣金都算您的。</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <i class="bi bi-bar-chart-line"></i>
+                </div>
+                <h3>即時數據追蹤</h3>
+                <p>專屬後台即時查看點擊數、訂單數、佣金金額，所有數據一目瞭然。</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <i class="bi bi-shop"></i>
+                </div>
+                <h3>豐富商品線</h3>
+                <p>從日本零食伴手禮到潮流服飾，超過 500+ 精選商品任您推廣。</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <i class="bi bi-link-45deg"></i>
+                </div>
+                <h3>專屬短網址</h3>
+                <p>為您產生專屬短網址，支援各社群平台追蹤，精準分析成效來源。</p>
+            </div>
+            <div class="feature-card fade-in">
+                <div class="feature-icon">
+                    <i class="bi bi-cash-stack"></i>
+                </div>
+                <h3>準時發放</h3>
+                <p>佣金累積達 ¥20,000 即可申請提領，我們保證準時發放。</p>
+            </div>
+        </div>
+    </section>
+    
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="section-title fade-in">
+            <h2>如何開始？</h2>
+            <p>只要三個步驟，立即開始賺取佣金</p>
+        </div>
+        <div class="steps">
+            <div class="step fade-in">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>申請加入</h3>
+                    <p>透過 LINE 或 Email 聯繫我們，提供您的社群平台資訊，我們會在 24 小時內審核並開通您的分潤帳戶。</p>
+                </div>
+            </div>
+            <div class="step fade-in">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>取得專屬連結</h3>
+                    <p>登入後台，獲得您的專屬推廣連結。可以為不同社群平台產生不同的追蹤連結，精準分析各平台成效。</p>
+                </div>
+            </div>
+            <div class="step fade-in">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>分享賺佣金</h3>
+                    <p>將連結分享到您的社群、部落格或任何平台。有人透過您的連結購買，您就能獲得 5% 佣金！</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Commission Section -->
+    <section class="commission">
+        <div class="commission-box fade-in">
+            <div class="commission-rate">5<span>%</span></div>
+            <h3>每筆訂單佣金</h3>
+            <p>業界最高分潤比例，讓您的推廣更有價值</p>
+            <div class="commission-details">
+                <div class="commission-detail">
+                    <i class="bi bi-calendar-check"></i>
+                    <div>30 天 Cookie</div>
+                </div>
+                <div class="commission-detail">
+                    <i class="bi bi-wallet2"></i>
+                    <div>¥20,000 起提</div>
+                </div>
+                <div class="commission-detail">
+                    <i class="bi bi-lightning-charge"></i>
+                    <div>即時追蹤</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- CTA Section -->
+    <section class="cta" id="contact">
+        <h2 class="fade-in">準備好開始了嗎？</h2>
+        <p class="fade-in">立即聯繫我們，成為 GoyouLink 分潤夥伴！</p>
+        <a href="https://line.me/ti/p/@goyoutati" target="_blank" class="btn btn-primary fade-in">
+            <i class="bi bi-line"></i> 透過 LINE 申請
+        </a>
+        <div class="contact-methods fade-in">
+            <a href="https://www.instagram.com/goyoutati/" target="_blank" class="contact-card">
+                <i class="bi bi-instagram"></i>
+                <span>Instagram</span>
+                <small>@goyoutati</small>
+            </a>
+            <a href="https://www.facebook.com/goyoutati/" target="_blank" class="contact-card">
+                <i class="bi bi-facebook"></i>
+                <span>Facebook</span>
+                <small>goyoutati</small>
+            </a>
+            <a href="mailto:contact@goyoutati.com" class="contact-card">
+                <i class="bi bi-envelope"></i>
+                <span>Email</span>
+                <small>contact@goyoutati.com</small>
+            </a>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer>
+        <div class="footer-logo">GoyouLink</div>
+        <div class="footer-links">
+            <a href="https://goyoutati.com" target="_blank">GOYOUTATI 官網</a>
+            <a href="/partner">夥伴登入</a>
+            <a href="/admin">管理後台</a>
+        </div>
+        <p class="copyright">© 2024 GoyouLink. All rights reserved.</p>
+    </footer>
+    
+    <!-- Scroll Animation Script -->
+    <script>
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+        
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
+        
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

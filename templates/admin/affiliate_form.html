@@ -19,6 +19,8 @@
         {% endif %}
         
         <form method="POST">
+            <!-- 基本資訊 -->
+            <h5 class="mb-3"><i class="bi bi-person"></i> 基本資訊</h5>
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="name" class="form-label">名稱 <span class="text-danger">*</span></label>
@@ -33,7 +35,6 @@
                         <option value="affiliate" {% if not affiliate or affiliate.type == 'affiliate' %}selected{% endif %}>一般推廣者（網紅、部落客等）</option>
                         <option value="reseller" {% if affiliate and affiliate.type == 'reseller' %}selected{% endif %}>系統租戶（GoyouLink 代購業者）</option>
                     </select>
-                    <div class="form-text">系統租戶為使用 GoyouLink ERP 的代購業者</div>
                 </div>
             </div>
             
@@ -49,7 +50,7 @@
                     <input type="text" class="form-control" id="domain" name="domain"
                            value="{{ affiliate.domain if affiliate else '' }}"
                            placeholder="例如：erp.xxx.com">
-                    <div class="form-text">僅限系統租戶填寫，一般推廣者可留空</div>
+                    <div class="form-text">僅限系統租戶填寫</div>
                 </div>
             </div>
             
@@ -70,10 +71,8 @@
                     <div class="form-text">用於追蹤訂單來源，例如「alice」、「shop01」</div>
                 </div>
                 {% endif %}
-            </div>
-            
-            {% if affiliate %}
-            <div class="row">
+                
+                {% if affiliate %}
                 <div class="col-md-6 mb-3">
                     <label for="status" class="form-label">狀態</label>
                     <select class="form-select" id="status" name="status">
@@ -81,10 +80,65 @@
                         <option value="inactive" {% if affiliate.status == 'inactive' %}selected{% endif %}>停用</option>
                     </select>
                 </div>
+                {% endif %}
             </div>
-            {% endif %}
             
-            <hr>
+            <hr class="my-4">
+            
+            <!-- 社群媒體 -->
+            <h5 class="mb-3"><i class="bi bi-share"></i> 社群媒體</h5>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="social_facebook" class="form-label">
+                        <i class="bi bi-facebook text-primary"></i> Facebook
+                    </label>
+                    <input type="url" class="form-control" id="social_facebook" name="social_facebook"
+                           value="{{ affiliate.social_facebook if affiliate else '' }}"
+                           placeholder="https://www.facebook.com/yourpage">
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label for="social_instagram" class="form-label">
+                        <i class="bi bi-instagram text-danger"></i> Instagram
+                    </label>
+                    <input type="url" class="form-control" id="social_instagram" name="social_instagram"
+                           value="{{ affiliate.social_instagram if affiliate else '' }}"
+                           placeholder="https://www.instagram.com/youraccount">
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="social_threads" class="form-label">
+                        <i class="bi bi-threads text-dark"></i> Threads
+                    </label>
+                    <input type="url" class="form-control" id="social_threads" name="social_threads"
+                           value="{{ affiliate.social_threads if affiliate else '' }}"
+                           placeholder="https://www.threads.net/@youraccount">
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label for="social_youtube" class="form-label">
+                        <i class="bi bi-youtube text-danger"></i> YouTube
+                    </label>
+                    <input type="url" class="form-control" id="social_youtube" name="social_youtube"
+                           value="{{ affiliate.social_youtube if affiliate else '' }}"
+                           placeholder="https://www.youtube.com/@yourchannel">
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="social_tiktok" class="form-label">
+                        <i class="bi bi-tiktok text-dark"></i> TikTok
+                    </label>
+                    <input type="url" class="form-control" id="social_tiktok" name="social_tiktok"
+                           value="{{ affiliate.social_tiktok if affiliate else '' }}"
+                           placeholder="https://www.tiktok.com/@youraccount">
+                </div>
+            </div>
+            
+            <hr class="my-4">
             
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">
@@ -95,18 +149,4 @@
         </form>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-// 根據類型自動顯示/隱藏網域欄位
-document.getElementById('type').addEventListener('change', function() {
-    const domainField = document.getElementById('domain').closest('.col-md-6');
-    if (this.value === 'affiliate') {
-        domainField.style.opacity = '0.5';
-    } else {
-        domainField.style.opacity = '1';
-    }
-});
-</script>
 {% endblock %}

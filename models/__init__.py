@@ -25,7 +25,10 @@ def get_supabase():
 
 def create_affiliate(name: str, email: str = None, domain: str = None, 
                      ref_code: str = None, commission_rate: float = None,
-                     affiliate_type: str = 'affiliate'):
+                     affiliate_type: str = 'affiliate',
+                     social_facebook: str = None, social_instagram: str = None,
+                     social_threads: str = None, social_youtube: str = None,
+                     social_tiktok: str = None):
     """建立新的代購業者"""
     db = get_supabase()
     
@@ -48,7 +51,12 @@ def create_affiliate(name: str, email: str = None, domain: str = None,
         'short_code': short_code,
         'commission_rate': commission_rate,
         'status': 'active',
-        'type': affiliate_type  # 新增類型欄位
+        'type': affiliate_type,
+        'social_facebook': social_facebook,
+        'social_instagram': social_instagram,
+        'social_threads': social_threads,
+        'social_youtube': social_youtube,
+        'social_tiktok': social_tiktok
     }
     
     try:

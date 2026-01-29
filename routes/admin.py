@@ -87,6 +87,13 @@ def affiliates_create():
         commission_rate = request.form.get('commission_rate')
         affiliate_type = request.form.get('type', 'affiliate')
         
+        # 社群媒體
+        social_facebook = request.form.get('social_facebook') or None
+        social_instagram = request.form.get('social_instagram') or None
+        social_threads = request.form.get('social_threads') or None
+        social_youtube = request.form.get('social_youtube') or None
+        social_tiktok = request.form.get('social_tiktok') or None
+        
         if commission_rate:
             commission_rate = float(commission_rate)
         else:
@@ -98,7 +105,12 @@ def affiliates_create():
             domain=domain,
             ref_code=ref_code,
             commission_rate=commission_rate,
-            affiliate_type=affiliate_type
+            affiliate_type=affiliate_type,
+            social_facebook=social_facebook,
+            social_instagram=social_instagram,
+            social_threads=social_threads,
+            social_youtube=social_youtube,
+            social_tiktok=social_tiktok
         )
         
         if affiliate:
@@ -140,7 +152,13 @@ def affiliates_edit(affiliate_id):
             'domain': request.form.get('domain'),
             'commission_rate': float(request.form.get('commission_rate', 5)),
             'status': request.form.get('status', 'active'),
-            'type': request.form.get('type', 'affiliate')
+            'type': request.form.get('type', 'affiliate'),
+            # 社群媒體
+            'social_facebook': request.form.get('social_facebook') or None,
+            'social_instagram': request.form.get('social_instagram') or None,
+            'social_threads': request.form.get('social_threads') or None,
+            'social_youtube': request.form.get('social_youtube') or None,
+            'social_tiktok': request.form.get('social_tiktok') or None
         }
         
         update_affiliate(affiliate_id, **update_data)

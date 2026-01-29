@@ -26,44 +26,35 @@ def normalize_text(text):
     """正規化文字，移除特殊符號方便比對"""
     if not text:
         return ''
-    # 轉小寫
     text = text.lower()
-    # 移除常見分隔符號（-、_、空格、.、【】、()）
     text = re.sub(r'[-_\s\.\[\]【】\(\)（）]', '', text)
     return text
 
 
 def match_product(product, query_normalized):
     """檢查商品是否匹配搜尋關鍵字"""
-    # 搜尋範圍：標題、品牌、標籤
     searchable_fields = [
         product.get('title', ''),
         product.get('vendor', ''),
         product.get('product_type', ''),
+        product.get('tags', ''),
     ]
     
-    # 加入 tags
-    tags = product.get('tags', '')
-    if tags:
-        searchable_fields.append(tags)
-    
-    # 合併所有可搜尋文字
     combined_text = ' '.join(searchable_fields)
     combined_normalized = normalize_text(combined_text)
     
-    # 檢查是否包含關鍵字
     return query_normalized in combined_normalized
 
 
-def get_all_shopify_products():
-    """取得所有 Shopify 商品（含分頁）"""
+def search_shopify_products(query_normalized, max_results=20):
+    """搜尋 Shopify 商品，找到足夠數量就停止"""
     shop_domain = Config.SHOPIFY_SHOP_DOMAIN
     access_token = Config.SHOPIFY_ACCESS_TOKEN
     
     if not shop_domain or not access_token:
         return []
     
-    all_products = []
+    matched_products = []
     url = f"https://{shop_domain}/admin/api/2024-01/products.json"
     headers = {
         'X-Shopify-Access-Token': access_token,
@@ -76,51 +67,78 @@ def get_all_shopify_products():
     }
     
     try:
-        # 第一頁
-        response = requests.get(url, headers=headers, params=params, timeout=15)
-        if response.status_code != 200:
-            print(f"Shopify API error: {response.status_code}")
-            return []
+        page_count = 0
+        max_pages = 10  # 最多搜尋 10 頁
         
-        data = response.json()
-        all_products.extend(data.get('products', []))
-        
-        # 檢查是否有下一頁
-        page_count = 1
-        while 'Link' in response.headers and page_count < 5:
-            link_header = response.headers['Link']
-            if 'rel="next"' not in link_header:
-                break
-            
-            # 取得 next link
-            links = link_header.split(',')
-            next_url = None
-            for link in links:
-                if 'rel="next"' in link:
-                    next_url = link.split(';')[0].strip().strip('<>')
+        while page_count < max_pages:
+            if page_count == 0:
+                response = requests.get(url, headers=headers, params=params, timeout=10)
+            else:
+                # 從 Link header 取得下一頁
+                if 'Link' not in response.headers:
                     break
+                    
+                link_header = response.headers['Link']
+                if 'rel="next"' not in link_header:
+                    break
+                
+                next_url = None
+                for link in link_header.split(','):
+                    if 'rel="next"' in link:
+                        next_url = link.split(';')[0].strip().strip('<>')
+                        break
+                
+                if not next_url:
+                    break
+                
+                response = requests.get(next_url, headers=headers, timeout=10)
             
-            if not next_url:
-                break
-            
-            response = requests.get(next_url, headers=headers, timeout=15)
             if response.status_code != 200:
                 break
             
             data = response.json()
             products = data.get('products', [])
+            
             if not products:
                 break
             
-            all_products.extend(products)
+            # 邊取得邊搜尋
+            for product in products:
+                if match_product(product, query_normalized):
+                    # 取得價格
+                    price = '0'
+                    if product.get('variants'):
+                        price = product['variants'][0].get('price', '0')
+                    
+                    # 取得圖片
+                    image_url = ''
+                    if product.get('images'):
+                        image_url = product['images'][0].get('src', '')
+                    
+                    matched_products.append({
+                        'id': product['id'],
+                        'title': product.get('title', ''),
+                        'handle': product['handle'],
+                        'price': price,
+                        'image': image_url,
+                        'vendor': product.get('vendor', ''),
+                        'url': f"{Config.REDIRECT_TARGET}/products/{product['handle']}"
+                    })
+                    
+                    # 找到足夠數量就停止
+                    if len(matched_products) >= max_results:
+                        return matched_products
+            
             page_count += 1
         
-        print(f"Loaded {len(all_products)} products from Shopify")
-        return all_products
+        return matched_products
         
+    except requests.exceptions.Timeout:
+        print("Shopify API timeout")
+        return matched_products  # 回傳已找到的結果
     except Exception as e:
-        print(f"Error fetching products: {e}")
-        return []
+        print(f"Error searching products: {e}")
+        return matched_products
 
 
 # ============================================
@@ -200,7 +218,6 @@ def profile():
         
         update_affiliate(affiliate_id, **update_data)
         
-        # 重新取得更新後的資料
         affiliate = get_affiliate_by_id(affiliate_id)
         return render_template('affiliate/profile.html', affiliate=affiliate, success=True)
     
@@ -256,7 +273,6 @@ def links():
     short_url = f"{Config.SHORT_URL_DOMAIN}/{affiliate['short_code']}"
     direct_url = f"{Config.REDIRECT_TARGET}?ref={affiliate['ref_code']}"
     
-    # 取得各來源點擊統計
     source_stats = get_clicks_by_source(affiliate_id)
     
     return render_template('affiliate/links.html', 
@@ -278,50 +294,11 @@ def api_search_products():
     if not query or len(query) < 2:
         return jsonify({'products': [], 'error': '請輸入至少 2 個字'})
     
-    # 正規化搜尋關鍵字
     query_normalized = normalize_text(query)
     
-    print(f"Searching for: {query} (normalized: {query_normalized})")
-    
     try:
-        # 取得所有商品（含分頁）
-        all_products = get_all_shopify_products()
-        
-        if not all_products:
-            return jsonify({'products': [], 'error': '無法取得商品列表'})
-        
-        # 模糊搜尋
-        matched_products = []
-        
-        for product in all_products:
-            # 使用改進的匹配函數
-            if match_product(product, query_normalized):
-                # 取得第一個 variant 的價格
-                price = '0'
-                if product.get('variants'):
-                    price = product['variants'][0].get('price', '0')
-                
-                # 取得第一張圖片
-                image_url = ''
-                if product.get('images'):
-                    image_url = product['images'][0].get('src', '')
-                elif product.get('image'):
-                    image_url = product['image'].get('src', '')
-                
-                matched_products.append({
-                    'id': product['id'],
-                    'title': product.get('title', ''),
-                    'handle': product['handle'],
-                    'price': price,
-                    'image': image_url,
-                    'vendor': product.get('vendor', ''),
-                    'url': f"{Config.REDIRECT_TARGET}/products/{product['handle']}"
-                })
-        
-        print(f"Found {len(matched_products)} matching products")
-        
-        # 限制回傳 20 個
-        matched_products = matched_products[:20]
+        # 搜尋商品（找到 20 個就停）
+        matched_products = search_shopify_products(query_normalized, max_results=20)
         
         return jsonify({
             'products': matched_products,

@@ -190,13 +190,13 @@
         <h5 class="mb-0"><i class="bi bi-search"></i> 商品搜尋</h5>
     </div>
     <div class="card-body">
-        <p class="text-muted mb-3">搜尋商品，一鍵產生您的專屬推廣連結</p>
+        <p class="text-muted mb-3">搜尋商品，一鍵產生您的專屬推廣連結（最多顯示 20 個）</p>
         
         <div class="row mb-3">
             <div class="col-md-8">
                 <div class="input-group">
                     <input type="text" class="form-control" id="product-search" 
-                           placeholder="輸入商品名稱搜尋..." 
+                           placeholder="輸入商品名稱搜尋（例如：xgirl、神戶風月堂）" 
                            onkeypress="if(event.key==='Enter') searchProducts()">
                     <button class="btn btn-primary" onclick="searchProducts()">
                         <i class="bi bi-search"></i> 搜尋
@@ -217,11 +217,24 @@
             <div id="search-empty" class="text-center py-4 text-muted" style="display: none;">
                 <i class="bi bi-inbox" style="font-size: 3rem;"></i>
                 <p class="mt-2">找不到相關商品</p>
+                <p class="mb-0">
+                    <a href="{{ config.REDIRECT_TARGET }}" target="_blank" class="btn btn-outline-primary">
+                        <i class="bi bi-shop me-1"></i> 前往官網瀏覽所有商品
+                    </a>
+                </p>
             </div>
             
             <div id="search-error" class="alert alert-danger" style="display: none;"></div>
             
             <div id="products-grid" class="row g-3"></div>
+            
+            <!-- 官網連結（搜尋有結果時顯示） -->
+            <div id="shop-link" class="text-center mt-4 pt-3 border-top" style="display: none;">
+                <p class="text-muted mb-2">找不到想要的商品？</p>
+                <a href="{{ config.REDIRECT_TARGET }}" target="_blank" class="btn btn-outline-primary">
+                    <i class="bi bi-shop me-1"></i> 前往官網瀏覽所有商品
+                </a>
+            </div>
         </div>
     </div>
 </div>
@@ -232,7 +245,7 @@
         <h5 class="mb-0"><i class="bi bi-box"></i> 手動輸入商品網址</h5>
     </div>
     <div class="card-body">
-        <p class="text-muted mb-3">如果搜尋不到商品，可以直接輸入商品頁面網址</p>
+        <p class="text-muted mb-3">從官網複製商品網址，產生您的專屬推廣連結</p>
         
         <div class="row mb-3">
             <div class="col-md-8">
@@ -384,6 +397,7 @@ async function searchProducts() {
     document.getElementById('search-loading').style.display = 'block';
     document.getElementById('search-empty').style.display = 'none';
     document.getElementById('search-error').style.display = 'none';
+    document.getElementById('shop-link').style.display = 'none';
     document.getElementById('products-grid').innerHTML = '';
     
     try {
@@ -425,6 +439,9 @@ async function searchProducts() {
             `;
             grid.appendChild(col);
         });
+        
+        // 顯示官網連結
+        document.getElementById('shop-link').style.display = 'block';
         
     } catch (error) {
         document.getElementById('search-loading').style.display = 'none';

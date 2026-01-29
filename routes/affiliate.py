@@ -7,6 +7,7 @@ from models import (
 )
 from config import Config
 import requests
+import re
 
 affiliate_bp = Blueprint('affiliate', __name__, url_prefix='/partner')
 
@@ -19,6 +20,15 @@ def affiliate_required(f):
             return redirect(url_for('affiliate.login'))
         return f(*args, **kwargs)
     return decorated_function
+
+
+def normalize_text(text):
+    """正規化文字，移除特殊符號方便比對"""
+    # 轉小寫
+    text = text.lower()
+    # 移除常見分隔符號（-、_、空格、.）
+    text = re.sub(r'[-_\s\.]', '', text)
+    return text
 
 
 # ============================================
@@ -171,10 +181,13 @@ def links():
 @affiliate_required
 def api_search_products():
     """搜尋 Shopify 商品"""
-    query = request.args.get('q', '').strip().lower()
+    query = request.args.get('q', '').strip()
     
     if not query or len(query) < 2:
         return jsonify({'products': [], 'error': '請輸入至少 2 個字'})
+    
+    # 正規化搜尋關鍵字
+    query_normalized = normalize_text(query)
     
     try:
         # 呼叫 Shopify Admin API
@@ -185,11 +198,14 @@ def api_search_products():
             return jsonify({'products': [], 'error': 'Shopify API 未設定'})
         
         # 取得所有商品
+        all_products = []
         url = f"https://{shop_domain}/admin/api/2024-01/products.json"
         headers = {
             'X-Shopify-Access-Token': access_token,
             'Content-Type': 'application/json'
         }
+        
+        # 分頁取得所有商品
         params = {
             'limit': 250,
             'status': 'active'
@@ -201,13 +217,17 @@ def api_search_products():
             return jsonify({'products': [], 'error': f'API 錯誤: {response.status_code}'})
         
         data = response.json()
-        products = []
+        all_products = data.get('products', [])
         
-        for product in data.get('products', []):
-            # 模糊搜尋：檢查標題是否包含搜尋關鍵字
-            title_lower = product.get('title', '').lower()
+        # 模糊搜尋：正規化後比對
+        matched_products = []
+        
+        for product in all_products:
+            title = product.get('title', '')
+            title_normalized = normalize_text(title)
             
-            if query in title_lower:
+            # 檢查正規化後的標題是否包含正規化後的關鍵字
+            if query_normalized in title_normalized:
                 # 取得第一個 variant 的價格
                 price = '0'
                 if product.get('variants'):
@@ -220,19 +240,23 @@ def api_search_products():
                 elif product.get('image'):
                     image_url = product['image'].get('src', '')
                 
-                products.append({
+                matched_products.append({
                     'id': product['id'],
-                    'title': product['title'],
+                    'title': title,
                     'handle': product['handle'],
                     'price': price,
                     'image': image_url,
                     'url': f"{Config.REDIRECT_TARGET}/products/{product['handle']}"
                 })
         
-        # 限制回傳數量
-        products = products[:20]
+        # 限制回傳 20 個
+        matched_products = matched_products[:20]
         
-        return jsonify({'products': products})
+        return jsonify({
+            'products': matched_products,
+            'total_found': len(matched_products),
+            'shop_url': Config.REDIRECT_TARGET
+        })
         
     except requests.exceptions.Timeout:
         return jsonify({'products': [], 'error': '連線逾時'})
